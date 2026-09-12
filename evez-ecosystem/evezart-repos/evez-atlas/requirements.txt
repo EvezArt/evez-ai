@@ -14,7 +14,7 @@ pytest-asyncio>=0.23
 
 # Semantic Possibility Space dependencies
 sentence-transformers==3.0.1
-torch==2.1.2
+torch==2.13.0
 numpy==1.26.4
 
 # Optional: For production use with real quantum hardware:
