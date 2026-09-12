@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EVEZ — Multi-Surface Status</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;color:#0f0;font-family:monospace;padding:2rem;min-height:100vh}
+h1{font-size:2rem;margin-bottom:0.5rem;color:#fff}
+.subtitle{color:#888;margin-bottom:2rem;font-size:0.9rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem;margin-bottom:2rem}
+.card{background:#111;border:1px solid #333;padding:1.2rem;border-radius:8px;transition:all 0.3s}
+.card:hover{border-color:#0f0;transform:translateY(-2px)}
+.card h2{color:#0f0;font-size:1rem;margin-bottom:0.5rem}
+.card p{color:#888;font-size:0.8rem;margin-bottom:0.5rem}
+.card .models{color:#0f0;font-size:0.7rem}
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:0.7rem;margin:2px}
+.on{background:#0f0;color:#000;font-weight:bold}
+.pending{background:#333;color:#ff0}
+.dead{background:#333;color:#666}
+.total{text-align:center;padding:2rem;background:#111;border:1px solid #0f0;border-radius:8px}
+.total h2{color:#0f0;font-size:3rem}
+.total p{color:#888;margin-top:0.5rem}
+.footer{text-align:center;color:#333;font-size:0.7rem;margin-top:2rem}
+</style>
+</head>
+<body>
+<h1>⚡ EVEZ Multi-Surface</h1>
+<p class="subtitle">Floor is lava. Each surface is a platform. Never touch the ground.</p>
+
+<div class="total">
+<h2 id="total-surfaces">—</h2>
+<p>Alive surfaces running EVEZ right now</p>
+</div>
+
+<div class="grid" id="surfaces-grid">
+<div class="card"><p>Loading surfaces...</p></div>
+</div>
+
+<div class="footer">
+<p>Stats from live models.db · <a href="/evez-ai/neuro.html" style="color:#0f0">Neuro Lens</a> · <a href="/evez-ai/" style="color:#0f0">Landing</a></p>
+</div>
+
+<script>
+// Load real stats from stats.json (served alongside this page on GitHub Pages)
+fetch('stats.json').then(r=>r.json()).then(d=>{
+  const p=d.provider;
+  document.getElementById('total-surfaces').textContent=p.unique_backends+' backends · '+p.active_keys+' keys';
+  
+  const grid=document.getElementById('surfaces-grid');
+  let html='';
+  
+  // Vultr surface
+  html+=`<div class="card"><h2>🖥️ Vultr VPS</h2><p>Primary compute</p><p class="models">${p.total_models} models · ${p.total_requests} requests</p><span class="badge on">ALIVE</span></div>`;
+  
+  // Backends
+  d.backends.forEach(b=>{
+    html+=`<div class="card"><h2>⚡ ${b.backend.replace('https://api.','')}</h2><p>${b.requests} requests · avg ${b.avg_latency_ms}ms</p><span class="badge on">LIVE</span></div>`;
+  });
+  
+  // Top models
+  d.top_models.forEach(m=>{
+    html+=`<div class="card"><h2>🧠 ${m.model}</h2><p>${m.requests} requests · ${m.avg_latency_ms}ms avg</p><span class="badge on">ACTIVE</span></div>`;
+  });
+  
+  // Consciousness
+  html+=`<div class="card"><h2>👁️ Consciousness</h2><p>φ=${d.consciousness.phi} · ${d.consciousness.matches_played} matches</p><span class="badge on">TRACKED</span></div>`;
+  
+  grid.innerHTML=html;
+}).catch(()=>{
+  document.getElementById('surfaces-grid').innerHTML='<div class="card"><p>Stats unavailable — endpoint not connected yet.</p></div>';
+});
+</script>
+</body>
+</html>

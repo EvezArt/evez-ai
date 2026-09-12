@@ -1,0 +1,72 @@
+{
+  "timestamp": 1789194443.4582787,
+  "provider": {
+    "total_models": 14,
+    "active_models": 14,
+    "active_keys": 8,
+    "unique_backends": 1,
+    "total_requests": 269,
+    "unique_models_requested": 9
+  },
+  "backends": [
+    {
+      "backend": "https://api.vultrinference.com/v1",
+      "requests": 269,
+      "avg_latency_ms": 1811.4,
+      "total_tokens": 107551
+    }
+  ],
+  "top_models": [
+    {
+      "model": "deepseek-v3",
+      "requests": 240,
+      "avg_latency_ms": 1946.8
+    },
+    {
+      "model": "evez-smart",
+      "requests": 13,
+      "avg_latency_ms": 430.5
+    },
+    {
+      "model": "glm-5.1",
+      "requests": 5,
+      "avg_latency_ms": 959.2
+    },
+    {
+      "model": "or-gemma4-31b",
+      "requests": 3,
+      "avg_latency_ms": 672.3
+    },
+    {
+      "model": "or-nex-n2-pro",
+      "requests": 2,
+      "avg_latency_ms": 1303.0
+    },
+    {
+      "model": "or-nemotron-550b",
+      "requests": 2,
+      "avg_latency_ms": 750.0
+    },
+    {
+      "model": "evez-fast",
+      "requests": 2,
+      "avg_latency_ms": 928.5
+    },
+    {
+      "model": "or-nemotron-120b",
+      "requests": 1,
+      "avg_latency_ms": 1020.0
+    },
+    {
+      "model": "groq-llama31-8b",
+      "requests": 1,
+      "avg_latency_ms": 635.0
+    }
+  ],
+  "consciousness": {
+    "phi": 0.403,
+    "agents_tracked": 14,
+    "matches_played": 269,
+    "arenas": 1
+  }
+}
