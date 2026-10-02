@@ -29,11 +29,13 @@ sleep 5
 # 6. Configure Standard Compute as default provider
 openclaw config set models.mode merge
 
+: "${STANDARDCOMPUTE_API_KEY:?STANDARDCOMPUTE_API_KEY must be set in the environment; never commit it}"
+
 # Add Standard Compute provider
-cat > /tmp/stdcmpt.json << 'EOF'
+cat > /tmp/stdcmpt.json << EOF
 {
   "baseUrl": "https://api.stdcmpt.com/v1",
-  "apiKey": "REVOKED_STANDARDCOMPUTE_KEY",
+  "apiKey": "$STANDARDCOMPUTE_API_KEY",
   "api": "openai-responses",
   "models": [
     {

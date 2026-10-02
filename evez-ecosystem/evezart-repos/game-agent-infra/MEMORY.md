@@ -19,7 +19,7 @@
 
 - **2026-05-18 23:15** [system] test: This is a test memory
 
-- **2026-05-18 23:15** [credentials] standardcompute_api_key: REVOKED_STANDARDCOMPUTE_KEY
+- **2026-05-18 23:15** [credentials] standardcompute_api_key: <REDACTED — set STANDARDCOMPUTE_API_KEY in the environment; never commit it>
 
 - **2026-05-18 23:15** [config] standardcompute_base_url: https://api.stdcmpt.com/v1
 
