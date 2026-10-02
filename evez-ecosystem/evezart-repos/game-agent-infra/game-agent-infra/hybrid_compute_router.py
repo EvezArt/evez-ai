@@ -6,6 +6,7 @@ Reduces Standard Compute usage by 80%+
 """
 
 import subprocess
+import os
 import json
 import random
 
@@ -41,7 +42,7 @@ def use_standard_compute(prompt):
     """Fallback to Standard Compute"""
     result = subprocess.run([
         "curl", "-s", "-X", "POST", "https://api.stdcmpt.com/v1/completions",
-        "-H", "Authorization: Bearer REVOKED_STANDARDCOMPUTE_KEY",
+        "-H", f"Authorization: Bearer {os.environ['STANDARDCOMPUTE_API_KEY']}",
         "-H", "Content-Type: application/json",
         "-d", json.dumps({"model": "standardcompute", "prompt": prompt, "max_tokens": 300})
     ], capture_output=True, text=True)

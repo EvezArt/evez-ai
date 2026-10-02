@@ -6,6 +6,7 @@ Target: $100+/day to cover costs + profit
 """
 
 import subprocess
+import os
 import json
 from pathlib import Path
 from datetime import datetime
@@ -23,7 +24,7 @@ class AIRevenueMachine:
         
         result = subprocess.run([
             "curl", "-s", "-X", "POST", "https://api.stdcmpt.com/v1/completions",
-            "-H", "Authorization: Bearer REVOKED_STANDARDCOMPUTE_KEY",
+            "-H", f"Authorization: Bearer {os.environ['STANDARDCOMPUTE_API_KEY']}",
             "-H", "Content-Type: application/json",
             "-d", json.dumps({
                 "model": "standardcompute",
