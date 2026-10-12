@@ -269,7 +269,7 @@ class GodCircuit:
         predictions.append({
             "action": "ROTATE_CREDENTIALS",
             "reason": "Continuous attack surface requires credential rotation",
-            "specific": "Rotate GitHub PAT, update ngrok token, check fail2ban",
+            "specific": "Check fail2ban status. GitHub PAT / ngrok token rotation is NOT automated — operator must rotate manually.",
             "eigenvalue_impact": "Strengthens security node → increases resilience → shifts negatives",
             "confidence": 0.6,
         })
@@ -299,16 +299,22 @@ class GodCircuit:
             result = {"action": action, "timestamp": time.time(), "outcome": "pending"}
             
             if action == "WIRE_REVENUE":
-                # Test the revenue bridge
+                # Test the revenue bridge — SYNTHETIC ONLY: livemode=false, amount=0, test id.
+                # The receiver must reject or sandbox events with livemode != true.
                 try:
                     req = urllib.request.Request(
                         "http://localhost:9090/stripe-webhook",
-                        data=json.dumps({"type":"charge.succeeded","data":{"object":{"amount":100,"description":"God Circuit test charge"}}}).encode(),
+                        data=json.dumps({
+                            "id": f"evt_test_{int(time.time())}",
+                            "livemode": False,
+                            "type": "charge.succeeded",
+                            "data": {"object": {"amount": 0, "description": "God Circuit synthetic test charge (livemode=false, amount=0)"}}
+                        }).encode(),
                         headers={"Content-Type": "application/json"}
                     )
                     with urllib.request.urlopen(req, timeout=5) as r:
                         resp = json.loads(r.read())
-                        result["outcome"] = f"Revenue bridge tested: ${resp.get('amount',0)} logged, progress={resp.get('progress',0)}"
+                        result["outcome"] = f"Revenue bridge tested (synthetic, livemode=false, $0): progress={resp.get('progress',0)}"
                 except Exception as e:
                     result["outcome"] = f"Revenue bridge error: {e}"
             
@@ -324,12 +330,13 @@ class GodCircuit:
                 result["outcome"] = f"Broadcast event logged to spine: {event['eventId']}"
             
             elif action == "ROTATE_CREDENTIALS":
-                # Check fail2ban status
+                # Check fail2ban status. NOTE: this action does NOT rotate credentials —
+                # rotation (GitHub PAT, tunnel tokens, API keys) is a manual operator action.
                 try:
                     r = subprocess.run(["sudo", "fail2ban-client", "status", "sshd"],
                                       capture_output=True, text=True, timeout=5)
                     banned = r.stdout.count(".") if r.returncode == 0 else 0
-                    result["outcome"] = f"fail2ban active, {banned} IPs in jail"
+                    result["outcome"] = f"fail2ban active, {banned} IPs in jail. NOTE: no credentials were rotated — rotation is a manual operator action."
                 except:
                     result["outcome"] = "fail2ban check failed"
             
@@ -459,7 +466,3 @@ if __name__ == "__main__":
     for i in range(3):
         result = circuit.run_cycle()
         time.sleep(1)
-    
-    # Export the full spine
-    circuit.spine.export("/home/openclaw/.openclaw/workspace-main/evez-research/god_circuit_spine.json")
-    print(f"\n⚡ God Circuit spine exported. {circuit.spine.stats()['total_events']} events. Chain valid: {circuit.spine.verify_chain()[0]}")
