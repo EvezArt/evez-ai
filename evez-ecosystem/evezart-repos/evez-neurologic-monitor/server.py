@@ -49,7 +49,7 @@ SUBJECT = {
         "LBAN": {"status": "partial", "active_nodes": 2, "total": 4, "devices": ["Samsung Galaxy A16", "Vultr VPS heartbeat"]},
         "EBAN": {"status": "active", "active_nodes": 3, "total": 4, "devices": ["Caddy proxy", "SearXNG", "Code-server"]},
         "SBAN": {"active_nodes": 8, "total": 8, "devices": ["EVEZ mesh (29 services)"]},
-        "YBAN": {"status": "monitoring", "active_nodes": 3, "total": 5, "inferred_from": ["Telegram message timing", "Keystroke cadence", "Session duration patterns"]},
+        "YBAN": {"status": "not_connected", "active_nodes": 0, "total": 0, "inferred_from": []},
     }
 }
 
@@ -123,8 +123,8 @@ def scan_ecosystem_anomalies():
 def classify_signal(anomaly: dict) -> dict:
     classifications = {
         "infrastructure": {"origin": "terrestrial", "confidence": 0.95, "category": "system"},
-        "timing_pattern": {"origin": "unknown", "confidence": 0.3, "category": "NHI_candidate"},
-        "geometric": {"origin": "unknown", "confidence": 0.2, "category": "UAP_signature"},
+        "timing_pattern": {"origin": "unclassified", "confidence": None, "category": "infrastructure_pattern"},
+        "geometric": {"origin": "unclassified", "confidence": None, "category": "infrastructure_pattern"},
         "electromagnetic": {"origin": "terrestrial", "confidence": 0.7, "category": "RFI"},
         "cognitive": {"origin": "biological", "confidence": 0.85, "category": "human"},
     }
@@ -165,12 +165,12 @@ def compute_geometric_balance():
 # ===== ROUTES =====
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "1.0.0", "service": "evez-neurologic-monitor", "ts": int(time.time())}
+    return {"status": "ok", "version": "1.1.0", "service": "evez-neurologic-monitor", "ts": int(time.time())}
 
 @app.get("/")
 def root():
     return {"service": "EVEZ Neurologic Monitor", "version": "1.0.0", "port": 8963, "subject": "local operator",
-            "features": ["BAN (L/E/S/Y)", "NHI/UAP detection", "Profile cloning", "Geometric load balance", "Digital network area"],
+            "features": ["BAN topology", "Infrastructure telemetry", "Interaction metadata", "Geometric load balance"],
             "endpoints": ["/health", "/profile", "/ban", "/scan", "/signals", "/ingest", "/geometry", "/digital-network-area", "/viewer"]}
 
 @app.get("/profile", dependencies=[Depends(require_api_key)])
@@ -190,16 +190,12 @@ def run_scan():
     anomalies = scan_ecosystem_anomalies()
     classified = [classify_signal(a) for a in anomalies]
     for a in classified: SIGNAL_LOG.append(a)
-    nhi = [a for a in classified if a.get("signal_class", {}).get("category") == "NHI_candidate"]
-    uap = [a for a in classified if a.get("signal_class", {}).get("category") == "UAP_signature"]
-    return {"scan_ts": int(time.time() * 1000), "anomalies_found": len(classified), "nhi_candidates": nhi, "uap_candidates": uap, "all_signals": classified[-50:], "scan_depth": "ecosystem-layer-1"}
+    return {"scan_ts": int(time.time() * 1000), "anomalies_found": len(classified), "all_signals": classified[-50:], "scan_depth": "ecosystem-layer-1", "interpretation": "Infrastructure observations only; no NHI/UAP inference."}
 
 @app.get("/signals", dependencies=[Depends(require_api_key)])
 def get_signals():
     signals = list(SIGNAL_LOG)[-100:]
-    nhi = [s for s in signals if s.get("signal_class", {}).get("category") == "NHI_candidate"]
-    uap = [s for s in signals if s.get("signal_class", {}).get("category") == "UAP_signature"]
-    return {"total_logged": len(SIGNAL_LOG), "recent": signals[-50:], "nhi_count": len(nhi), "uap_count": len(uap), "anomaly_threshold_sigma": ANOMALY_THRESHOLD}
+    return {"total_logged": len(SIGNAL_LOG), "recent": signals[-50:], "anomaly_threshold_sigma": ANOMALY_THRESHOLD, "interpretation": "Infrastructure observations only; no NHI/UAP inference."}
 
 @app.post("/ingest", dependencies=[Depends(require_api_key)])
 def ingest_signal(body: dict = {}):
@@ -213,7 +209,7 @@ def get_geometry():
 
 @app.get("/viewer", response_class=HTMLResponse, dependencies=[Depends(require_api_key)])
 def viewer():
-    return HTMLResponse(content="""<!DOCTYPE html><html><head><title>EVEZ Neurologic Monitor</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;color:#0f0;font-family:monospace}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.panel{background:rgba(0,0,0,.85);border:1px solid #0f0;border-radius:8px;padding:12px}.panel h3{color:#0ff;margin:0 0 8px;font-size:13px}.val{font-size:24px;color:#0f0}.label{font-size:10px;color:#088;margin-top:2px}.row{display:flex;gap:8px;margin:4px;align-items:center}.ban{padding:8px;border-radius:4px;font-size:11px}.lban{border:1px solid #0f0}.eban{border:1px solid #0ff}.sban{border:1px solid #f0f}.yban{border:1px solid #ff0}#siglog{max-height:200px;overflow-y:auto;font-size:10px}#profile{grid-column:1/3}</style></head><body><div class=grid><div class=panel id=profile><h3>Neurologic Monitor — Local Operator</h3><div class=row><div><div class=val id=fidelity>0.0</div><div class=label>Clone Fidelity %</div></div><div><div class=val id=signals>0</div><div class=label>Signals</div></div><div><div class=val id=valence>0.00</div><div class=label>Valence</div></div><div><div class=val id=cogload>0.50</div><div class=label>Cognitive Load</div></div><div><div class=val id=stress>0.30</div><div class=label>Stress</div></div><div><div class=val id=circadian>active</div><div class=label>Circadian</div></div></div></div><div class=panel><h3>Body Area Networks</h3><div class=ban lban>LBAN: Local - BLE - On-body</div><div class=ban eban>EBAN: Extended - WiFi - Near-field</div><div class=ban sban>SBAN: Smart - Sub-6GHz - Mesh</div><div class=ban yban>YBAN: No neural sensor connected</div></div><div class=panel><h3>Infrastructure Anomaly Scanner</h3><div class=row><div><div class=val id=nhi>0</div><div class=label>NHI</div></div><div><div class=val id=uap>0</div><div class=label>UAP</div></div><div><div class=val id=anomalies>0</div><div class=label>Anomalies</div></div></div><div id=siglog></div></div><div class=panel><h3>Geometric Load</h3><div class=row><div><div class=val id=geo>-</div><div class=label>Balance</div></div><div><div class=val id=topology>-</div><div class=label>Topology</div></div><div><div class=val id=svc_up>-</div><div label>Services</div></div></div></div><div class=panel><h3>Digital Network Area</h3><div style=font-size:11px>Network identifiers redacted<br>Local-only monitor<br>Physiological sensors: not connected</div></div></div><script>setInterval(()=>{fetch('/profile').then(r=>r.json()).then(d=>{document.getElementById('fidelity').textContent='N/A';document.getElementById('signals').textContent=d.signals_ingested;document.getElementById('valence').textContent='N/A';document.getElementById('cogload').textContent='N/A';document.getElementById('stress').textContent='N/A';document.getElementById('circadian').textContent='NOT MEASURED'});fetch('/scan').then(r=>r.json()).then(d=>{document.getElementById('nhi').textContent=d.nhi_candidates.length;document.getElementById('uap').textContent=d.uap_candidates.length;document.getElementById('anomalies').textContent=d.anomalies_found});fetch('/geometry').then(r=>r.json()).then(d=>{document.getElementById('geo').textContent=d.geometric_balance_index;document.getElementById('topology').textContent=d.load_topology;document.getElementById('svc_up').textContent=d.up+'/'+d.total_services})},5000)</script></body></html>""")
+    return HTMLResponse(content="""<!DOCTYPE html><html><head><title>EVEZ Neurologic Monitor</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a;color:#0f0;font-family:monospace}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px}.panel{background:rgba(0,0,0,.85);border:1px solid #0f0;border-radius:8px;padding:12px}.panel h3{color:#0ff;margin:0 0 8px;font-size:13px}.val{font-size:24px;color:#0f0}.label{font-size:10px;color:#088;margin-top:2px}.row{display:flex;gap:8px;margin:4px;align-items:center}.ban{padding:8px;border-radius:4px;font-size:11px}.lban{border:1px solid #0f0}.eban{border:1px solid #0ff}.sban{border:1px solid #f0f}.yban{border:1px solid #ff0}#siglog{max-height:200px;overflow-y:auto;font-size:10px}#profile{grid-column:1/3}</style></head><body><div class=grid><div class=panel id=profile><h3>Neurologic Monitor — Local Operator</h3><div class=row><div><div class=val id=fidelity>0.0</div><div class=label>Clone Fidelity %</div></div><div><div class=val id=signals>0</div><div class=label>Signals</div></div><div><div class=val id=valence>0.00</div><div class=label>Valence</div></div><div><div class=val id=cogload>0.50</div><div class=label>Cognitive Load</div></div><div><div class=val id=stress>0.30</div><div class=label>Stress</div></div><div><div class=val id=circadian>active</div><div class=label>Circadian</div></div></div></div><div class=panel><h3>Body Area Networks</h3><div class=ban lban>LBAN: Local - BLE - On-body</div><div class=ban eban>EBAN: Extended - WiFi - Near-field</div><div class=ban sban>SBAN: Smart - Sub-6GHz - Mesh</div><div class=ban yban>YBAN: No neural sensor connected</div></div><div class=panel><h3>Infrastructure Anomaly Scanner</h3><div class=row><div><div class=val id=nhi>0</div><div class=label>NHI</div></div><div><div class=val id=uap>0</div><div class=label>UAP</div></div><div><div class=val id=anomalies>0</div><div class=label>Anomalies</div></div></div><div id=siglog></div></div><div class=panel><h3>Geometric Load</h3><div class=row><div><div class=val id=geo>-</div><div class=label>Balance</div></div><div><div class=val id=topology>-</div><div class=label>Topology</div></div><div><div class=val id=svc_up>-</div><div label>Services</div></div></div></div><div class=panel><h3>Digital Network Area</h3><div style=font-size:11px>Network identifiers redacted<br>Local-only monitor<br>Physiological sensors: not connected</div></div></div><script>const apiKey=sessionStorage.getItem('evezApiKey')||prompt('Enter EVEZ monitor API key');sessionStorage.setItem('evezApiKey',apiKey);const opts={headers:{'X-EVEZ-API-Key':apiKey}};setInterval(()=>{fetch('/profile',opts).then(r=>r.json()).then(d=>{document.getElementById('fidelity').textContent='N/A';document.getElementById('signals').textContent=d.signals_ingested;document.getElementById('valence').textContent='N/A';document.getElementById('cogload').textContent='N/A';document.getElementById('stress').textContent='N/A';document.getElementById('circadian').textContent='NOT MEASURED'});fetch('/scan',opts).then(r=>r.json()).then(d=>{document.getElementById('nhi').textContent='N/A';document.getElementById('uap').textContent='N/A';document.getElementById('anomalies').textContent=d.anomalies_found});fetch('/geometry',opts).then(r=>r.json()).then(d=>{document.getElementById('geo').textContent=d.geometric_balance_index;document.getElementById('topology').textContent=d.load_topology;document.getElementById('svc_up').textContent=d.up+'/'+d.total_services})},5000)</script></body></html>""")
 
 if __name__ == "__main__":
     import uvicorn
